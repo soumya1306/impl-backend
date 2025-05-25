@@ -29,7 +29,7 @@ app.get("/", (req, res) => {
   
 });
 
-app.post("/api/send-email", (req, res) => {
+app.post("/api/send-email", async (req, res) => {
   try {
     const requestData = req.body;
     
@@ -41,11 +41,16 @@ app.post("/api/send-email", (req, res) => {
     }
     console.log(requestData);
 
-    transporter.sendMail(mailOptions, (error, info) => {
-      if(error){
-        return console.log("Error Occured:", error);
-      }
-      console.log("Email sent sucessfully", info.response);
+    await new Promise((resolve, reject) => {
+      transporter.sendMail(mailOptions, (error, info) => {
+        if(error){
+          return console.log("Error Occured:", error);
+          reject(error);
+        }else{
+          console.log("Email sent sucessfully", info.response);
+          resolve(info);
+        }
+      })
     })
 
     res.status(200).json ( {message: "email sent", data: requestData});
