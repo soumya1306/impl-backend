@@ -1,20 +1,11 @@
 const express = require("express");
-const cors = require ("cors");
-const nodemailer = require("nodemailer");
-
 require("dotenv").config();
-
-const app = express();
+const logger = require("./utils/logger");
 const port = process.env.PORT;
 
-const transporter =  nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_ID,
-    pass: process.env.EMAIL_PASS,
-  },
-})
+const app = express();
 
+const cors = require ("cors");
 app.use(express.json());
 app.use(
   cors({
@@ -24,53 +15,25 @@ app.use(
   })
 )
 
-
 app.get("/", (req, res) => {
   res.status(200).json({message: "Welcome to impl backend"})
 });
 
-app.post("/api/send-email", async (req, res) => {
-  try {
-    const requestData = req.body;
-    
-    const mailOptions = {
-      from: process.env.EMAIL_ID,
-      to: process.env.EMAIL_TO,
-      subject: "Info email",
-      html: `
-              <div>
-                <h2>User Details</h2>
-                <p>The user provided the following details</p>
-                <ul>
-                  <li>Name: ${requestData.name}</li>
-                  <li>Email: ${requestData.email}</li>
-                  <li>Contact: ${requestData.phone}</li>
-                  <li>Message: ${requestData.details}</li>
-                </ul>
-              </div>`,  
-    }
+const emailRoute = require("./routes/send-email");
+const loginRoute = require("./routes/login");
+const basicDetailsRoute = require("./routes/basic-details");
+const addtionalDetailsRoute = require("./routes/additional-details");
+const attachmentsRoute = require("./routes/attachments");
+const commonRoute = require("./routes/common");
 
-    await new Promise((resolve, reject) => {
-      transporter.sendMail(mailOptions, (error, info) => {
-        if(error){
-          return console.log("Error Occured:", error);
-          reject(error);
-        }else{
-          console.log("Email sent sucessfully", info.response);
-          resolve(info);
-          res.status(200).json ( {message: "email sent", data: requestData});
-        }
-      })
-    })
+app.use("/api", emailRoute);
+app.use("/api", loginRoute);
+app.use("/api", basicDetailsRoute);
+app.use("/api", addtionalDetailsRoute);
+app.use("/api", attachmentsRoute);
+app.use("/api", commonRoute);
 
-  }catch (error) {
-    next(error)
-  }finally {
-    
-  }
-  
-});
 
 app.listen(port, () => {
-  console.log(`Server listening on port ${port}`);
+  logger.info(`Server listening on port ${port}`);
 });
